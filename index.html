@@ -543,7 +543,7 @@ function buildRow(d, no) {
   if (d.isInternal) {
     expoHtml = `<span class="internal-tag"><i class="fas fa-user-circle"></i> ${d.namaDriver||'-'} <span class="internal-badge">INTERNAL</span></span>${waLink}`;
   } else {
-    expoHtml = `<span class="expo-tag"><i class="fas fa-truck"></i> ${d.expedisi||'-'}</span> <span style="font-size:.72rem;color:var(--txt2);">${d.namaPic||''}</span>${waLink}`;
+    expoHtml = `<span style="font-size:1.25rem;" class="expo-tag"><i class="fas fa-truck"></i> ${d.expedisi||'-'}</span> <span style="font-size:1.25rem; color:var(--txt2);">${d.namaPic||''}</span>${waLink}`;
   }
 
   const muOk = d.statusBarang?.mu;
