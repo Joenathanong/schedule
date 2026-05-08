@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Penerima | Jadwal Pengiriman</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg:#f4f6fb; --surface:#ffffff; --surface2:#f0f3fa; --surface3:#e8ecf6;
+  --border:#dde3f0; --border2:#c8d1e8;
+  --txt:#0f172a; --txt2:#4b5675; --txt3:#8594b8;
+  --accent:#3d5afe; --accent2:#0077ff;
+  --success:#059669; --warning:#d97706; --danger:#dc2626;
+  --reschedule:#ea580c;
+  --high:#ea580c; --mid:#d97706; --low:#64748b;
+  --card-sh:0 2px 12px rgba(0,0,50,0.07);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--txt); min-height:100vh; }
+
+/* HERO HEADER */
+.hero {
+  background:linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+  padding:28px 32px 20px; color:#fff;
+  position:sticky; top:0; z-index:100;
+  box-shadow:0 4px 20px rgba(26,41,128,.25);
+}
+.hero-inner { max-width:1200px; margin:0 auto; }
+.hero-top { display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.hero-title h1 { font-family:'Syne',sans-serif; font-size:1.4rem; font-weight:800; display:flex; align-items:center; gap:10px; }
+.hero-title h1 i { font-size:1.2rem; }
+.hero-title p { font-size:.78rem; opacity:.8; margin-top:4px; }
+.hero-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.live-badge {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+  border-radius:20px; padding:4px 14px; font-size:.72rem; font-weight:600;
+  display:flex; align-items:center; gap:6px;
+}
+.live-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; animation:blink 1.2s infinite; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.4} }
+
+/* DATE NAV */
+.date-nav { display:flex; align-items:center; gap:8px; }
+.date-pill {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+  border-radius:8px; padding:6px 14px; font-size:.8rem; font-weight:600;
+  display:flex; align-items:center; gap:8px;
+}
+.date-arrow {
+  background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.25);
+  border-radius:6px; padding:6px 10px; cursor:pointer; color:#fff;
+  font-size:.75rem; transition:.2s;
+}
+.date-arrow:hover { background:rgba(255,255,255,.3); }
+input.dp { background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); border-radius:8px; padding:5px 10px; color:#fff; font-size:.75rem; }
+input.dp::-webkit-calendar-picker-indicator { filter:invert(1); }
+.today-pill {
+  background:rgba(255,255,255,.2); border:1px solid rgba(255,255,255,.3);
+  border-radius:8px; padding:6px 12px; cursor:pointer; color:#fff;
+  font-size:.72rem; font-weight:600; transition:.2s;
+}
+.today-pill:hover { background:rgba(255,255,255,.35); }
+
+/* FILTER ROW */
+.filter-row {
+  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+  background:rgba(255,255,255,.1); border-radius:12px; padding:10px 14px; margin-top:0;
+}
+.filter-label { font-size:.72rem; font-weight:700; opacity:.7; margin-right:4px; }
+.area-chip {
+  background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+  border-radius:6px; padding:4px 12px; font-size:.75rem; font-weight:600; cursor:pointer; color:#fff; transition:.2s;
+}
+.area-chip.active { background:rgba(255,255,255,.9); color:#1a2980; }
+.area-chip:hover:not(.active) { background:rgba(255,255,255,.25); }
+.search-hero {
+  margin-left:auto; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.2);
+  border-radius:8px; padding:5px 12px; display:flex; align-items:center; gap:7px;
+}
+.search-hero input { background:transparent; border:none; outline:none; color:#fff; font-size:.78rem; width:150px; }
+.search-hero input::placeholder { color:rgba(255,255,255,.5); }
+
+/* STATS BAR */
+.stats-bar { background:var(--surface); border-bottom:1px solid var(--border); padding:12px 32px; }
+.stats-inner { max-width:1200px; margin:0 auto; display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+.stat-pill { display:flex; align-items:center; gap:8px; padding:6px 14px; border-radius:8px; background:var(--surface2); border:1px solid var(--border); }
+.stat-pill .lbl { font-size:.62rem; text-transform:uppercase; letter-spacing:.8px; color:var(--txt2); font-weight:700; }
+.stat-pill .val { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; }
+.stat-pill i { color:var(--accent); font-size:.85rem; }
+
+/* MAIN CONTENT */
+.content { max-width:1200px; margin:0 auto; padding:24px 32px; }
+
+/* GROUP */
+.group-section { margin-bottom:28px; }
+.group-head {
+  display:flex; align-items:center; gap:10px; margin-bottom:12px;
+  padding-bottom:8px; border-bottom:2px solid var(--border2);
+}
+.group-head-icon { width:32px; height:32px; border-radius:8px; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#fff; font-size:.85rem; }
+.group-head-title { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:700; }
+.group-head-count { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:2px 10px; font-size:.7rem; font-weight:700; color:var(--txt2); }
+
+/* CARDS GRID */
+.cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:14px; }
+
+/* DELIVERY CARD */
+.del-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:16px; box-shadow:var(--card-sh);
+  transition:.2s; position:relative; overflow:hidden;
+}
+.del-card:hover { box-shadow:0 4px 20px rgba(61,90,254,.12); border-color:var(--border2); transform:translateY(-1px); }
+.del-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:4px; }
+.del-card.c-ready::before { background:var(--success); }
+.del-card.c-pending::before { background:var(--warning); }
+.del-card.c-cancel::before { background:var(--danger); opacity:.6; }
+.del-card.c-reschedule::before { background:var(--reschedule); }
+.del-card.c-cancel { opacity:.75; }
+.card-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; }
+.card-area { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; display:flex; align-items:center; gap:7px; }
+.card-area i { color:var(--accent); font-size:.85rem; }
+.card-badges { display:flex; gap:6px; flex-wrap:wrap; }
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 9px; border-radius:5px; font-size:.68rem; font-weight:700; border:1px solid; }
+.b-ready { background:rgba(5,150,105,.08); color:var(--success); border-color:rgba(5,150,105,.2); }
+.b-pending { background:rgba(217,119,6,.08); color:var(--warning); border-color:rgba(217,119,6,.2); }
+.b-cancel { background:rgba(220,38,38,.08); color:var(--danger); border-color:rgba(220,38,38,.2); }
+.b-reschedule { background:rgba(234,88,12,.08); color:var(--reschedule); border-color:rgba(234,88,12,.2); }
+.b-high { background:rgba(234,88,12,.1); color:var(--high); border-color:rgba(234,88,12,.2); }
+.b-mid { background:rgba(217,119,6,.1); color:var(--mid); border-color:rgba(217,119,6,.2); }
+.b-low { background:rgba(100,116,139,.1); color:var(--low); border-color:rgba(100,116,139,.2); }
+.b-internal { background:rgba(124,77,255,.1); color:#7c3aed; border-color:rgba(124,77,255,.2); }
+.card-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.info-row { display:flex; flex-direction:column; gap:2px; }
+.info-lbl { font-size:.6rem; text-transform:uppercase; letter-spacing:.8px; color:var(--txt3); font-weight:700; }
+.info-val { font-size:.82rem; font-weight:600; color:var(--txt); }
+.card-divider { height:1px; background:var(--border); margin:10px 0; }
+.armada-row { display:flex; align-items:center; justify-content:space-between; }
+.armada-name { display:flex; align-items:center; gap:7px; font-size:.82rem; font-weight:600; }
+.armada-name i { color:var(--accent); }
+.wa-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  background:#dcfce7; border:1px solid #86efac;
+  color:#16a34a; border-radius:6px; padding:4px 10px;
+  font-size:.7rem; font-weight:700; text-decoration:none; transition:.2s;
+}
+.wa-btn:hover { background:#bbf7d0; }
+.kesiapan-row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+.ks-badge {
+  display:flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:6px; font-size:.7rem; font-weight:600; border:1px solid;
+}
+.ks-ok { background:rgba(5,150,105,.08); color:var(--success); border-color:rgba(5,150,105,.2); }
+.ks-no { background:var(--surface2); color:var(--txt3); border-color:var(--border); }
+.jam-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:6px; padding:3px 10px; font-size:.72rem; font-weight:700; color:var(--txt2);
+}
+.reschedule-note { background:rgba(234,88,12,.07); border-radius:6px; padding:6px 10px; font-size:.72rem; color:var(--reschedule); margin-top:8px; border:1px solid rgba(234,88,12,.15); }
+
+/* EMPTY */
+.empty { text-align:center; padding:80px 20px; color:var(--txt3); }
+.empty i { font-size:3rem; margin-bottom:16px; display:block; opacity:.3; }
+.empty p { font-size:.9rem; }
+
+/* SCROLL TOP BTN */
+.scroll-top {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--accent); color:#fff; border:none;
+  border-radius:50%; width:44px; height:44px; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.9rem; box-shadow:0 4px 16px rgba(61,90,254,.35);
+  opacity:0; transition:.3s; z-index:999;
+}
+.scroll-top.show { opacity:1; }
+
+/* FOOTER */
+footer { background:var(--surface); border-top:1px solid var(--border); padding:16px 32px; text-align:center; font-size:.72rem; color:var(--txt3); margin-top:24px; }
+</style>
+</head>
+<body>
+
+<!-- HERO HEADER -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-top">
+      <div class="hero-title">
+        <h1><i class="fas fa-map-marked-alt"></i> Dashboard Penerima — Jadwal Pengiriman</h1>
+        <p>Pantau status pengiriman untuk area Anda secara real-time</p>
+      </div>
+      <div class="hero-right">
+        <div class="live-badge"><div class="live-dot"></div> Live Real-time</div>
+        <div class="date-nav">
+          <button class="date-arrow" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
+          <div class="date-pill"><i class="far fa-calendar-alt"></i> <span id="dateLabel">-</span></div>
+          <button class="date-arrow" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
+          <button class="today-pill" onclick="goToday()"><i class="fas fa-calendar-day"></i> Hari Ini</button>
+          <input type="date" class="dp" id="datePick" onchange="pickDate(this.value)">
+        </div>
+      </div>
+    </div>
+    <div class="filter-row">
+      <span class="filter-label"><i class="fas fa-filter"></i> Filter Area:</span>
+      <div class="area-chip active" data-area="">Semua Area</div>
+      <div id="areaChips"></div>
+      <div class="search-hero">
+        <i class="fas fa-search" style="opacity:.6;font-size:.75rem;"></i>
+        <input type="text" id="searchInput" placeholder="Cari ekspedisi / driver…">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stats-inner" id="statsBar"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="content" id="mainContent">
+  <div class="empty" id="loadingState"><i class="fas fa-spinner fa-spin"></i><p>Memuat data…</p></div>
+</div>
+
+<button class="scroll-top" id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-arrow-up"></i></button>
+
+<footer>
+  <i class="fas fa-satellite-dish"></i> Data diperbarui otomatis via Firebase &nbsp;|&nbsp;
+  🟢 Siap &nbsp; 🟡 Belum Siap &nbsp; 🔴 Cancel &nbsp; 🔶 Reschedule &nbsp;|&nbsp;
+  <a href="index.html" style="color:var(--accent);text-decoration:none;">← Dashboard Loading Dock</a>
+</footer>
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ==============================
+// FIREBASE CONFIG — GANTI SESUAI PROJECT ANDA
+// ==============================
+const firebaseConfig = {
+  apiKey: "AIzaSyA3jCsOuH3lT8NsVtCs3cQV0azc5Gur10E",
+  authDomain: "schedule-c452a.firebaseapp.com",
+  projectId: "schedule-c452a",
+  storageBucket: "schedule-c452a.firebasestorage.app",
+  messagingSenderId: "555260750564",
+  appId: "1:555260750564:web:25d5def705830d464a1af1"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+let allData = [];
+let selectedDate = todayStr();
+let selectedArea = '';
+let searchVal = '';
+let unsub = null;
+let knownAreas = new Set();
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+// DATE NAV
+function renderDateLabel() {
+  const d = new Date(selectedDate + 'T00:00:00');
+  document.getElementById("dateLabel").textContent = d.toLocaleDateString('id-ID',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+  document.getElementById("datePick").value = selectedDate;
+}
+window.shiftDate = dir => {
+  const d = new Date(selectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir);
+  selectedDate = d.toISOString().slice(0,10);
+  renderDateLabel(); subscribe();
+};
+window.goToday = () => { selectedDate = todayStr(); renderDateLabel(); subscribe(); };
+window.pickDate = v => { selectedDate = v; renderDateLabel(); subscribe(); };
+renderDateLabel();
+
+// SUBSCRIBE
+function subscribe() {
+  if (unsub) unsub();
+  document.getElementById("loadingState").style.display='block';
+  document.getElementById("mainContent").innerHTML='<div class="empty" id="loadingState"><i class="fas fa-spinner fa-spin"></i><p>Memuat data…</p></div>';
+  const q = query(
+    collection(db,"deliveries"),
+    where("date","==",selectedDate),
+    orderBy("createdAt","asc")
+  );
+  unsub = onSnapshot(q, snap => {
+    allData = snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Collect areas
+    allData.forEach(d => { if(d.area) knownAreas.add(d.area); });
+    renderAreaChips();
+    render();
+  });
+}
+
+// AREA CHIPS
+function renderAreaChips() {
+  const sorted = [...knownAreas].sort();
+  const container = document.getElementById("areaChips");
+  container.innerHTML = sorted.map(a =>
+    `<div class="area-chip${selectedArea===a?' active':''}" data-area="${a}">${a}</div>`
+  ).join('');
+  container.querySelectorAll(".area-chip").forEach(c => {
+    c.addEventListener("click", () => {
+      selectedArea = c.dataset.area;
+      // update all chips
+      document.querySelectorAll(".area-chip").forEach(x=>x.classList.remove("active"));
+      c.classList.add("active");
+      document.querySelector('.area-chip[data-area=""]').classList.toggle("active", selectedArea==='');
+      render();
+    });
+  });
+}
+document.querySelector('.area-chip[data-area=""]').addEventListener("click", () => {
+  selectedArea = '';
+  document.querySelectorAll(".area-chip").forEach(x=>x.classList.remove("active"));
+  document.querySelector('.area-chip[data-area=""]').classList.add("active");
+  render();
+});
+
+// SEARCH
+document.getElementById("searchInput").addEventListener("input", e => {
+  searchVal = e.target.value.toLowerCase();
+  render();
+});
+
+// FILTER
+function getFiltered() {
+  return allData.filter(d => {
+    if (selectedArea && d.area !== selectedArea) return false;
+    if (searchVal) {
+      return (d.area||'').toLowerCase().includes(searchVal) ||
+             (d.expedisi||'').toLowerCase().includes(searchVal) ||
+             (d.namaDriver||'').toLowerCase().includes(searchVal) ||
+             (d.noKendaraan||'').toLowerCase().includes(searchVal);
+    }
+    return true;
+  });
+}
+
+// RENDER
+function render() {
+  const data = getFiltered();
+  updateStats(data);
+  const content = document.getElementById("mainContent");
+  if (!data.length) {
+    content.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i><p>Tidak ada jadwal${selectedArea ? ' untuk area ' + selectedArea : ''} pada tanggal ini</p></div>`;
+    return;
+  }
+  // Sort: internal first, then group by expedition
+  const internal = data.filter(d=>d.isInternal);
+  const expos = data.filter(d=>!d.isInternal);
+  const groups = {};
+  expos.forEach(d => {
+    const k = (d.expedisi||'Lainnya');
+    if (!groups[k]) groups[k] = [];
+    groups[k].push(d);
+  });
+  const sections = [];
+  if (internal.length) sections.push({ label:'Armada Internal', icon:'fas fa-user-circle', items:internal });
+  Object.keys(groups).sort().forEach(k => sections.push({ label:k, icon:'fas fa-truck', items:groups[k] }));
+
+  content.innerHTML = sections.map(sec => `
+    <div class="group-section">
+      <div class="group-head">
+        <div class="group-head-icon"><i class="${sec.icon}"></i></div>
+        <div class="group-head-title">${sec.label}</div>
+        <div class="group-head-count">${sec.items.length} kiriman</div>
+      </div>
+      <div class="cards-grid">
+        ${sec.items.map(buildCard).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildCard(d) {
+  const statusCls = { ready:'c-ready', pending:'c-pending', cancel:'c-cancel', reschedule:'c-reschedule' };
+  const statusBadge = { ready:'<span class="badge b-ready">✅ Siap</span>', pending:'<span class="badge b-pending">🟡 Belum Siap</span>', cancel:'<span class="badge b-cancel">❌ Cancel</span>', reschedule:'<span class="badge b-reschedule">🔶 Reschedule</span>' };
+  const priBadge = { High:'<span class="badge b-high"><i class="fas fa-arrow-up"></i> High</span>', Mid:'<span class="badge b-mid"><i class="fas fa-minus"></i> Mid</span>', Low:'<span class="badge b-low"><i class="fas fa-arrow-down"></i> Low</span>' };
+
+  const waNum = (d.picWa||'').replace(/[^0-9]/g,'');
+  const waFormatted = waNum.startsWith('0') ? '62'+waNum.slice(1) : waNum;
+  const waBtn = waNum ? `<a href="https://wa.me/${waFormatted}" target="_blank" class="wa-btn"><i class="fab fa-whatsapp"></i> WA PIC</a>` : '';
+
+  const armadaName = d.isInternal
+    ? `<span class="armada-name"><i class="fas fa-user-circle"></i> ${d.namaDriver||'-'} <span class="badge b-internal" style="font-size:.6rem;">INTERNAL</span></span>`
+    : `<span class="armada-name"><i class="fas fa-truck"></i> ${d.expedisi||'-'} ${d.namaPic?`<span style="font-size:.72rem;color:var(--txt2);">(${d.namaPic})</span>`:''}` + `</span>`;
+
+  const muOk = d.statusBarang?.mu, skOk = d.statusBarang?.skincare;
+  const kesiapan = `
+    <span class="ks-badge ${muOk?'ks-ok':'ks-no'}">${muOk?'✅':'⬜'} Make Up</span>
+    <span class="ks-badge ${skOk?'ks-ok':'ks-no'}">${skOk?'✅':'⬜'} Skincare</span>
+  `;
+
+  const jamBadge = d.jamBerangkat ? `<span class="jam-badge"><i class="fas fa-clock"></i> ${d.jamBerangkat}</span>` : '';
+  const reschedNote = d.statusPengiriman==='reschedule'&&d.keteranganReschedule ? `<div class="reschedule-note"><i class="fas fa-redo"></i> ${d.keteranganReschedule}</div>` : '';
+
+  return `
+    <div class="del-card ${statusCls[d.statusPengiriman]||'c-pending'}">
+      <div class="card-top">
+        <div class="card-area"><i class="fas fa-location-dot"></i> ${d.area||'-'}</div>
+        <div class="card-badges">
+          ${statusBadge[d.statusPengiriman]||statusBadge.pending}
+          ${priBadge[d.prioritas]||''}
+          ${jamBadge}
+        </div>
+      </div>
+      <div class="card-grid2">
+        <div class="info-row"><div class="info-lbl"><i class="fas fa-truck-moving"></i> Jenis Mobil</div><div class="info-val">${d.jenisMobil||'-'}</div></div>
+        <div class="info-row"><div class="info-lbl"><i class="fas fa-hashtag"></i> No Kendaraan</div><div class="info-val">${d.noKendaraan||'<span style="color:var(--txt3);font-style:italic;">TBC</span>'}</div></div>
+        <div class="info-row"><div class="info-lbl"><i class="fas fa-weight-hanging"></i> Tonase</div><div class="info-val">${d.tonase||'-'} ton</div></div>
+        <div class="info-row"><div class="info-lbl"><i class="fas fa-cube"></i> Kubikasi</div><div class="info-val">${d.kubikasi||'-'} m³</div></div>
+      </div>
+      <div class="card-divider"></div>
+      <div class="armada-row">
+        ${armadaName}
+        ${waBtn}
+      </div>
+      <div class="kesiapan-row">${kesiapan}</div>
+      ${reschedNote}
+    </div>
+  `;
+}
+
+function updateStats(data) {
+  const ready = data.filter(d=>d.statusPengiriman==='ready').length;
+  const pending = data.filter(d=>d.statusPengiriman==='pending').length;
+  const cancel = data.filter(d=>d.statusPengiriman==='cancel').length;
+  const ton = data.reduce((s,d)=>s+(parseFloat(d.tonase)||0),0).toFixed(1);
+  const kub = data.reduce((s,d)=>s+(parseFloat(d.kubikasi)||0),0).toFixed(1);
+  document.getElementById("statsBar").innerHTML = `
+    <div class="stat-pill"><i class="fas fa-clipboard-list"></i><div><div class="lbl">Total</div><div class="val">${data.length}</div></div></div>
+    <div class="stat-pill"><i class="fas fa-check-circle" style="color:var(--success);"></i><div><div class="lbl">Siap</div><div class="val" style="color:var(--success);">${ready}</div></div></div>
+    <div class="stat-pill"><i class="fas fa-clock" style="color:var(--warning);"></i><div><div class="lbl">Belum Siap</div><div class="val" style="color:var(--warning);">${pending}</div></div></div>
+    <div class="stat-pill"><i class="fas fa-ban" style="color:var(--danger);"></i><div><div class="lbl">Cancel</div><div class="val" style="color:var(--danger);">${cancel}</div></div></div>
+    <div class="stat-pill"><i class="fas fa-weight-hanging"></i><div><div class="lbl">Tonase / Kubik</div><div class="val">${ton}t / ${kub}m³</div></div></div>
+  `;
+}
+
+// SCROLL TOP BUTTON
+window.addEventListener("scroll", () => {
+  document.getElementById("scrollTop").classList.toggle("show", window.scrollY > 300);
+});
+
+subscribe();
+</script>
+</body>
+</html>

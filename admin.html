@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel | Delivery Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg:#080b14; --surface:#0e1220; --surface2:#141828;
+  --border:#1e2540; --border2:#252e4a;
+  --txt:#e2e8ff; --txt2:#6b7ba4; --txt3:#9aa5c4;
+  --accent:#3d5afe; --accent2:#00e5ff;
+  --success:#00e676; --warning:#ffab00; --danger:#ff1744;
+  --high:#ff6d00; --mid:#ffd600; --low:#546e7a;
+  --reschedule:#ff6f00;
+  --sidebar:200px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--txt); min-height:100vh; display:flex; }
+
+/* SIDEBAR */
+.sidebar {
+  width:var(--sidebar); background:var(--surface); border-right:1px solid var(--border);
+  display:flex; flex-direction:column; padding:20px 0; position:fixed; height:100vh; z-index:100;
+}
+.logo {
+  padding:0 18px 20px; border-bottom:1px solid var(--border);
+  font-family:'Syne',sans-serif; font-weight:800; font-size:1rem;
+  background:linear-gradient(135deg,#e2e8ff,var(--accent2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.logo span { display:block; font-size:.62rem; font-weight:400; color:var(--txt2); font-family:'DM Sans',sans-serif; margin-top:2px; }
+.nav { flex:1; padding:12px 10px; display:flex; flex-direction:column; gap:4px; }
+.nav-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; border-radius:8px; cursor:pointer;
+  font-size:.82rem; font-weight:500; color:var(--txt2);
+  transition:.2s; text-decoration:none;
+}
+.nav-item i { width:16px; text-align:center; font-size:.85rem; }
+.nav-item:hover { background:var(--surface2); color:var(--txt); }
+.nav-item.active { background:rgba(61,90,254,.15); color:var(--accent2); border:1px solid rgba(61,90,254,.2); }
+.nav-sep { height:1px; background:var(--border); margin:8px 0; }
+.nav-label { padding:6px 12px; font-size:.58rem; text-transform:uppercase; letter-spacing:1.5px; color:var(--txt2); font-weight:700; }
+.sidebar-bottom { padding:12px 10px; border-top:1px solid var(--border); }
+.user-info { display:flex; align-items:center; gap:8px; padding:8px; background:var(--surface2); border-radius:8px; }
+.user-av { width:28px; height:28px; background:var(--accent); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; }
+.user-nm { font-size:.75rem; font-weight:600; }
+.user-role { font-size:.6rem; color:var(--txt2); }
+.logout-btn { width:100%; margin-top:8px; background:transparent; border:1px solid var(--border2); border-radius:8px; padding:7px; cursor:pointer; color:var(--txt2); font-size:.75rem; transition:.2s; }
+.logout-btn:hover { background:rgba(255,23,68,.1); color:var(--danger); border-color:var(--danger); }
+
+/* MAIN CONTENT */
+.main { margin-left:var(--sidebar); flex:1; display:flex; flex-direction:column; min-height:100vh; }
+.topbar {
+  background:var(--surface); border-bottom:1px solid var(--border);
+  padding:12px 24px; display:flex; justify-content:space-between; align-items:center;
+  position:sticky; top:0; z-index:50;
+}
+.page-title { font-family:'Syne',sans-serif; font-size:1.1rem; font-weight:700; }
+.page-sub { font-size:.72rem; color:var(--txt2); margin-top:2px; }
+.topbar-right { display:flex; gap:10px; align-items:center; }
+.date-ctrl { display:flex; align-items:center; gap:6px; }
+.date-ctrl input { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:6px 12px; color:var(--txt); font-size:.8rem; }
+.content { padding:24px; flex:1; }
+
+/* TABS */
+.tabs { display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:20px; }
+.tab {
+  padding:10px 20px; cursor:pointer; font-size:.82rem; font-weight:600;
+  color:var(--txt2); border-bottom:2px solid transparent; transition:.2s;
+}
+.tab.active { color:var(--accent2); border-bottom-color:var(--accent2); }
+.tab-pane { display:none; }
+.tab-pane.active { display:block; }
+
+/* CARDS */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:20px; margin-bottom:16px;
+}
+.card-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+.card-title { font-family:'Syne',sans-serif; font-size:.95rem; font-weight:700; }
+
+/* BUTTONS */
+.btn {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:8px 16px; border-radius:8px; border:none;
+  cursor:pointer; font-family:'DM Sans',sans-serif; font-size:.8rem; font-weight:600;
+  transition:.2s; text-decoration:none;
+}
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-primary:hover { opacity:.85; }
+.btn-success { background:rgba(0,230,118,.15); color:var(--success); border:1px solid rgba(0,230,118,.3); }
+.btn-danger { background:rgba(255,23,68,.1); color:var(--danger); border:1px solid rgba(255,23,68,.2); }
+.btn-ghost { background:var(--surface2); color:var(--txt2); border:1px solid var(--border2); }
+.btn-ghost:hover { color:var(--txt); }
+.btn-warning { background:rgba(255,171,0,.15); color:var(--warning); border:1px solid rgba(255,171,0,.3); }
+.btn-sm { padding:5px 12px; font-size:.72rem; }
+
+/* TABLE */
+.tbl-wrap { overflow:auto; border-radius:10px; border:1px solid var(--border); }
+table.admin-tbl { width:100%; border-collapse:collapse; min-width:900px; font-size:.8rem; }
+table.admin-tbl th {
+  background:var(--surface2); color:var(--txt2);
+  padding:10px 14px; text-align:left; font-size:.65rem; font-weight:700; text-transform:uppercase; letter-spacing:.8px;
+  border-bottom:1px solid var(--border);
+}
+table.admin-tbl td { padding:10px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+table.admin-tbl tr:hover td { background:rgba(255,255,255,.02); }
+
+/* FORM */
+.form-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:14px; }
+.form-group { display:flex; flex-direction:column; gap:5px; }
+.form-group.full { grid-column:1/-1; }
+label { font-size:.72rem; font-weight:600; color:var(--txt2); }
+input, select, textarea {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:8px 12px; color:var(--txt);
+  font-family:'DM Sans',sans-serif; font-size:.82rem;
+  transition:.2s; outline:none;
+}
+input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(61,90,254,.1); }
+select option { background:var(--surface2); }
+textarea { resize:vertical; min-height:60px; }
+
+/* MODAL */
+.modal-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,.7);
+  display:none; align-items:center; justify-content:center; z-index:999; backdrop-filter:blur(4px);
+}
+.modal-overlay.open { display:flex; }
+.modal {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:16px; padding:24px; width:90%; max-width:680px;
+  max-height:88vh; overflow-y:auto;
+}
+.modal-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+.modal-title { font-family:'Syne',sans-serif; font-size:1rem; font-weight:700; }
+.close-btn { background:var(--surface2); border:1px solid var(--border2); border-radius:8px; padding:5px 10px; cursor:pointer; color:var(--txt2); transition:.2s; }
+.close-btn:hover { color:var(--txt); }
+.modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+
+/* CHECKLIST */
+.check-wrap { display:flex; align-items:center; gap:8px; }
+.check-wrap input[type="checkbox"] {
+  width:16px; height:16px; accent-color:var(--accent2); cursor:pointer;
+  padding:0; border-radius:4px;
+}
+.check-lbl { font-size:.78rem; }
+
+/* BADGES */
+.badge { display:inline-flex; align-items:center; gap:4px; padding:2px 10px; border-radius:5px; font-size:.7rem; font-weight:700; }
+.b-high { background:rgba(255,109,0,.18); color:#ff9a3c; }
+.b-mid  { background:rgba(255,214,0,.15); color:#ffd600; }
+.b-low  { background:rgba(84,110,122,.2); color:#90a4ae; }
+.b-ready { background:rgba(0,230,118,.12); color:var(--success); }
+.b-pending { background:rgba(255,171,0,.12); color:var(--warning); }
+.b-cancel { background:rgba(255,23,68,.1); color:var(--danger); }
+.b-reschedule { background:rgba(255,111,0,.15); color:var(--reschedule); }
+.b-internal { background:rgba(124,77,255,.2); color:#ce93d8; }
+
+/* LOGIN PAGE */
+.login-page {
+  min-height:100vh; display:flex; align-items:center; justify-content:center;
+  background:var(--bg); flex-direction:column; gap:20px;
+}
+.login-box {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:20px; padding:36px; width:380px; max-width:95vw;
+}
+.login-logo { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:800; text-align:center; margin-bottom:24px;
+  background:linear-gradient(135deg,#e2e8ff,var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.login-logo span { display:block; font-family:'DM Sans',sans-serif; font-size:.78rem; color:var(--txt2); font-weight:400; margin-top:4px; }
+.login-err { background:rgba(255,23,68,.1); border:1px solid rgba(255,23,68,.2); border-radius:8px; padding:10px 14px; font-size:.78rem; color:var(--danger); display:none; margin-bottom:12px; }
+
+/* EXPORT SECTION */
+.export-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+
+/* Stats mini */
+.stat-row { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+.mini-stat { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 16px; flex:1; min-width:120px; }
+.mini-stat .lbl { font-size:.62rem; text-transform:uppercase; letter-spacing:1px; color:var(--txt2); font-weight:700; }
+.mini-stat .val { font-family:'Syne',sans-serif; font-size:1.3rem; font-weight:700; margin-top:2px; }
+
+/* ACTIVITY LOG */
+.log-item { display:flex; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); font-size:.75rem; }
+.log-time { color:var(--txt2); min-width:75px; }
+.log-who { color:var(--accent2); font-weight:600; }
+
+/* RESPONSIVE */
+@media(max-width:768px) {
+  .sidebar { width:60px; }
+  .nav-item span, .nav-label, .logo span, .user-nm, .user-role { display:none; }
+  .main { margin-left:60px; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div id="loginPage" class="login-page">
+  <div class="login-box">
+    <div class="login-logo">🚚 Delivery Scheduler<span>Loading Dock Management System</span></div>
+    <div class="login-err" id="loginErr"></div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="admin@perusahaan.com">
+    </div>
+    <div class="form-group" style="margin-bottom:20px;">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Masuk</button>
+  </div>
+</div>
+
+<!-- ADMIN APP (hidden until login) -->
+<div id="adminApp" style="display:none; width:100%; display:none;">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">DelivSched <span>Loading Dock System</span></div>
+    <nav class="nav">
+      <div class="nav-label">MENU UTAMA</div>
+      <div class="nav-item active" data-tab="jadwal" onclick="switchNav(this,'jadwal')">
+        <i class="fas fa-calendar-alt"></i> <span>Jadwal Kirim</span>
+      </div>
+      <div class="nav-item" data-tab="log" onclick="switchNav(this,'log')">
+        <i class="fas fa-history"></i> <span>Log Aktivitas</span>
+      </div>
+      <div class="nav-sep"></div>
+      <div class="nav-label">MASTER DATA</div>
+      <div class="nav-item" data-tab="driver" onclick="switchNav(this,'driver')">
+        <i class="fas fa-id-card"></i> <span>Driver Internal</span>
+      </div>
+      <div class="nav-item" data-tab="expedisi" onclick="switchNav(this,'expedisi')">
+        <i class="fas fa-truck"></i> <span>Ekspedisi</span>
+      </div>
+      <div class="nav-sep"></div>
+      <div class="nav-label">LAPORAN</div>
+      <div class="nav-item" data-tab="export" onclick="switchNav(this,'export')">
+        <i class="fas fa-file-excel"></i> <span>Export Excel</span>
+      </div>
+      <div class="nav-sep"></div>
+      <a href="index.html" class="nav-item" target="_blank"><i class="fas fa-tv"></i> <span>Dashboard Dock</span></a>
+      <a href="receiver.html" class="nav-item" target="_blank"><i class="fas fa-map-pin"></i> <span>Dashboard Penerima</span></a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-info">
+        <div class="user-av" id="userAv">A</div>
+        <div><div class="user-nm" id="userNm">Admin</div><div class="user-role" id="userRole">Administrator</div></div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="pageTitle">Jadwal Pengiriman</div>
+        <div class="page-sub" id="pageSub">Kelola jadwal pengiriman harian</div>
+      </div>
+      <div class="topbar-right">
+        <div class="date-ctrl">
+          <button class="btn btn-ghost btn-sm" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
+          <input type="date" id="adminDate" onchange="loadJadwal()">
+          <button class="btn btn-ghost btn-sm" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
+          <button class="btn btn-ghost btn-sm" onclick="goToday()"><i class="fas fa-calendar-day"></i> Hari Ini</button>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openModal()"><i class="fas fa-plus"></i> Tambah Jadwal</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- ===================== JADWAL TAB ===================== -->
+      <div class="tab-pane active" id="pane-jadwal">
+        <div class="stat-row" id="adminStats"></div>
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="fas fa-list" style="color:var(--accent2);margin-right:8px;"></i>Daftar Jadwal</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="text" placeholder="Cari…" id="adminSearch" style="width:180px;" oninput="renderJadwal()">
+              <select id="adminFilterStatus" onchange="renderJadwal()" style="width:140px;">
+                <option value="">Semua Status</option>
+                <option value="pending">Belum Siap</option>
+                <option value="ready">Siap</option>
+                <option value="cancel">Cancel</option>
+                <option value="reschedule">Reschedule</option>
+              </select>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table class="admin-tbl">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Jam</th>
+                  <th>Area Tujuan</th>
+                  <th>Jenis Mobil</th>
+                  <th>No Kendaraan</th>
+                  <th>Ton/Kubik</th>
+                  <th>Ekspedisi / Driver</th>
+                  <th>SP Print</th>
+                  <th>Kesiapan Barang</th>
+                  <th>Status</th>
+                  <th>Prioritas</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="adminTblBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== LOG TAB ===================== -->
+      <div class="tab-pane" id="pane-log">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-history" style="color:var(--accent2);margin-right:8px;"></i>Log Aktivitas</div></div>
+          <div id="logList"></div>
+        </div>
+      </div>
+
+      <!-- ===================== DRIVER TAB ===================== -->
+      <div class="tab-pane" id="pane-driver">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="fas fa-id-card" style="color:var(--accent2);margin-right:8px;"></i>Driver Internal</div>
+            <button class="btn btn-primary btn-sm" onclick="openDriverModal()"><i class="fas fa-plus"></i> Tambah Driver</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="admin-tbl">
+              <thead><tr><th>#</th><th>Nama Driver</th><th>No WA / Telepon</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+              <tbody id="driverTbl"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== EXPEDISI TAB ===================== -->
+      <div class="tab-pane" id="pane-expedisi">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><i class="fas fa-truck" style="color:var(--accent2);margin-right:8px;"></i>Master Ekspedisi</div>
+            <button class="btn btn-primary btn-sm" onclick="openExpoModal()"><i class="fas fa-plus"></i> Tambah Ekspedisi</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="admin-tbl">
+              <thead><tr><th>#</th><th>Nama Ekspedisi</th><th>Nama PIC</th><th>No WA PIC</th><th>Keterangan</th><th>Aksi</th></tr></thead>
+              <tbody id="expoTbl"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== EXPORT TAB ===================== -->
+      <div class="tab-pane" id="pane-export">
+        <div class="card">
+          <div class="card-head"><div class="card-title"><i class="fas fa-file-excel" style="color:var(--success);margin-right:8px;"></i>Export Data ke Excel</div></div>
+          <div class="form-grid" style="margin-bottom:20px;">
+            <div class="form-group">
+              <label>Tanggal Mulai</label>
+              <input type="date" id="exportFrom">
+            </div>
+            <div class="form-group">
+              <label>Tanggal Akhir</label>
+              <input type="date" id="exportTo">
+            </div>
+            <div class="form-group">
+              <label>Filter Status</label>
+              <select id="exportStatus">
+                <option value="">Semua Status</option>
+                <option value="ready">Siap</option>
+                <option value="pending">Belum Siap</option>
+                <option value="cancel">Cancel</option>
+                <option value="reschedule">Reschedule</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-success" onclick="exportExcel()"><i class="fas fa-file-excel"></i> Download Excel</button>
+          <div id="exportMsg" style="margin-top:12px;font-size:.78rem;color:var(--txt2);"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ===================== MODAL JADWAL ===================== -->
+<div class="modal-overlay" id="modalJadwal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalJadwalTitle">Tambah Jadwal Pengiriman</div>
+      <button class="close-btn" onclick="closeModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="editId">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Tanggal Pengiriman *</label>
+        <input type="date" id="fDate">
+      </div>
+      <div class="form-group">
+        <label>Jam Jadwal Berangkat</label>
+        <input type="time" id="fJam">
+      </div>
+      <div class="form-group">
+        <label>Area Tujuan *</label>
+        <input type="text" id="fArea" placeholder="Jakarta Pusat, Bandung, dll">
+      </div>
+      <div class="form-group">
+        <label>Jenis Mobil *</label>
+        <select id="fJenisMobil">
+          <option value="">Pilih Jenis</option>
+          <option>CDE</option><option>CDD</option><option>Tronton</option>
+          <option>Wingbox</option><option>Fuso</option><option>Engkel</option><option>Pickup</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>No Kendaraan (kosong = TBC)</label>
+        <input type="text" id="fNoKendaraan" placeholder="B 1234 ABC">
+      </div>
+      <div class="form-group">
+        <label>Tonase (ton)</label>
+        <input type="number" id="fTonase" placeholder="0.0" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Kubikasi (m³)</label>
+        <input type="number" id="fKubikasi" placeholder="0.0" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Prioritas *</label>
+        <select id="fPrioritas">
+          <option value="High">🔴 High</option>
+          <option value="Mid" selected>🟡 Mid</option>
+          <option value="Low">🔵 Low</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Tipe Armada *</label>
+        <select id="fTipeArmada" onchange="toggleArmadaFields()">
+          <option value="internal">Driver Internal</option>
+          <option value="expedisi">Ekspedisi</option>
+        </select>
+      </div>
+      <div class="form-group" id="fieldDriver">
+        <label>Driver Internal *</label>
+        <select id="fDriver"><option value="">Pilih Driver</option></select>
+      </div>
+      <div class="form-group" id="fieldExpedisi" style="display:none;">
+        <label>Ekspedisi *</label>
+        <select id="fExpedisi"><option value="">Pilih Ekspedisi</option></select>
+      </div>
+    </div>
+    <div class="form-group full" style="margin-top:12px;">
+      <label>Status Pengiriman</label>
+      <select id="fStatus">
+        <option value="pending">Belum Siap</option>
+        <option value="ready">Siap</option>
+        <option value="cancel">Cancel</option>
+        <option value="reschedule">Reschedule</option>
+      </select>
+    </div>
+    <div class="form-group" id="fieldReschedule" style="display:none; margin-top:8px;">
+      <label>Keterangan Reschedule</label>
+      <input type="text" id="fRescheduleNote" placeholder="Alasan reschedule / tanggal baru">
+    </div>
+    <div style="margin-top:16px; padding:14px; background:var(--surface2); border-radius:10px; border:1px solid var(--border);">
+      <div style="font-size:.75rem;font-weight:700;color:var(--txt2);margin-bottom:10px;"><i class="fas fa-print" style="margin-right:6px;"></i>STATUS SHIPPING PREPARATION (ADMIN ONLY)</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div class="check-wrap"><input type="checkbox" id="fSpPrint"><label class="check-lbl">✅ Sudah Print SP</label></div>
+        <div class="check-wrap"><input type="checkbox" id="fSpPeriksa"><label class="check-lbl">✅ Sudah Diperiksa Admin</label></div>
+      </div>
+      <div style="font-size:.75rem;font-weight:700;color:var(--txt2);margin:12px 0 8px;"><i class="fas fa-boxes" style="margin-right:6px;"></i>KESIAPAN BARANG</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;">
+        <div class="check-wrap"><input type="checkbox" id="fMakeup"><label class="check-lbl">✅ Make Up Siap</label></div>
+        <div class="check-wrap"><input type="checkbox" id="fSkincare"><label class="check-lbl">✅ Skincare Siap</label></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveJadwal()"><i class="fas fa-save"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DRIVER -->
+<div class="modal-overlay" id="modalDriver">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-head">
+      <div class="modal-title" id="driverModalTitle">Tambah Driver Internal</div>
+      <button class="close-btn" onclick="closeDriverModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="driverEditId">
+    <div class="form-grid">
+      <div class="form-group full"><label>Nama Driver *</label><input type="text" id="dNama" placeholder="Pak Budi"></div>
+      <div class="form-group full"><label>No WA / Telepon</label><input type="text" id="dWa" placeholder="0812xxxxxxxx"></div>
+      <div class="form-group full"><label>Keterangan</label><textarea id="dKet" placeholder="Opsional"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeDriverModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveDriver()"><i class="fas fa-save"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EKSPEDISI -->
+<div class="modal-overlay" id="modalExpo">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-head">
+      <div class="modal-title" id="expoModalTitle">Tambah Ekspedisi</div>
+      <button class="close-btn" onclick="closeExpoModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <input type="hidden" id="expoEditId">
+    <div class="form-grid">
+      <div class="form-group full"><label>Nama Ekspedisi *</label><input type="text" id="eNama" placeholder="JNE Express"></div>
+      <div class="form-group"><label>Nama PIC</label><input type="text" id="ePic" placeholder="Budi Santoso"></div>
+      <div class="form-group"><label>No WA PIC</label><input type="text" id="eWa" placeholder="0812xxxxxxxx"></div>
+      <div class="form-group full"><label>Keterangan</label><textarea id="eKet" placeholder="Opsional"></textarea></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeExpoModal()">Batal</button>
+      <button class="btn btn-primary" onclick="saveExpo()"><i class="fas fa-save"></i> Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- FIREBASE + APP LOGIC -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, updateDoc, deleteDoc, query, where, orderBy, getDocs, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ==============================
+// FIREBASE CONFIG — GANTI SESUAI PROJECT ANDA
+// ==============================
+const firebaseConfig = {
+  apiKey: "AIzaSyA3jCsOuH3lT8NsVtCs3cQV0azc5Gur10E",
+  authDomain: "schedule-c452a.firebaseapp.com",
+  projectId: "schedule-c452a",
+  storageBucket: "schedule-c452a.firebasestorage.app",
+  messagingSenderId: "555260750564",
+  appId: "1:555260750564:web:25d5def705830d464a1af1"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+// ==============================
+// STATE
+// ==============================
+let currentUser = null;
+let jadwalData = [];
+let driverList = [];
+let expoList = [];
+let selectedDate = new Date().toISOString().slice(0,10);
+let unsubJadwal = null;
+
+// ==============================
+// AUTH
+// ==============================
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("adminApp").style.display = "flex";
+    document.getElementById("userNm").textContent = user.email.split('@')[0];
+    document.getElementById("userAv").textContent = user.email[0].toUpperCase();
+    document.getElementById("adminDate").value = selectedDate;
+    loadMasterData();
+    loadJadwal();
+    loadLog();
+  } else {
+    document.getElementById("loginPage").style.display = "flex";
+    document.getElementById("adminApp").style.display = "none";
+  }
+});
+
+window.doLogin = async function() {
+  const em = document.getElementById("loginEmail").value.trim();
+  const pw = document.getElementById("loginPass").value;
+  const err = document.getElementById("loginErr");
+  err.style.display = "none";
+  try {
+    await signInWithEmailAndPassword(auth, em, pw);
+  } catch(e) {
+    err.style.display = "block";
+    err.textContent = "Login gagal: " + (e.code === 'auth/invalid-credential' ? 'Email atau password salah' : e.message);
+  }
+};
+window.doLogout = () => signOut(auth);
+
+// ==============================
+// DATE
+// ==============================
+window.shiftDate = function(dir) {
+  const d = new Date(selectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir);
+  selectedDate = d.toISOString().slice(0,10);
+  document.getElementById("adminDate").value = selectedDate;
+  loadJadwal();
+};
+window.goToday = function() {
+  selectedDate = new Date().toISOString().slice(0,10);
+  document.getElementById("adminDate").value = selectedDate;
+  loadJadwal();
+};
+window.loadJadwal = function() {
+  selectedDate = document.getElementById("adminDate").value || new Date().toISOString().slice(0,10);
+  if (unsubJadwal) unsubJadwal();
+  const q = query(collection(db,"deliveries"), where("date","==",selectedDate), orderBy("createdAt","asc"));
+  unsubJadwal = onSnapshot(q, snap => {
+    jadwalData = snap.docs.map(d => ({id:d.id,...d.data()}));
+    renderJadwal();
+    updateAdminStats();
+  });
+};
+
+// ==============================
+// MASTER DATA
+// ==============================
+async function loadMasterData() {
+  // Drivers
+  const dSnap = await getDocs(collection(db,"drivers"));
+  driverList = dSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const sel = document.getElementById("fDriver");
+  sel.innerHTML = '<option value="">Pilih Driver</option>';
+  driverList.forEach(d => sel.innerHTML += `<option value="${d.id}" data-wa="${d.wa||''}" data-nama="${d.nama}">${d.nama}</option>`);
+  renderDriverTbl();
+  // Expedisi
+  const eSnap = await getDocs(collection(db,"expedisi"));
+  expoList = eSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const eSel = document.getElementById("fExpedisi");
+  eSel.innerHTML = '<option value="">Pilih Ekspedisi</option>';
+  expoList.forEach(e => eSel.innerHTML += `<option value="${e.id}" data-wa="${e.wa||''}" data-pic="${e.pic||''}" data-nama="${e.nama}">${e.nama}</option>`);
+  renderExpoTbl();
+}
+
+function renderDriverTbl() {
+  const tbody = document.getElementById("driverTbl");
+  if (!driverList.length) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--txt2);">Belum ada driver</td></tr>`; return; }
+  tbody.innerHTML = driverList.map((d,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${d.nama}</strong></td>
+      <td>${d.wa ? `<a href="https://wa.me/${formatWa(d.wa)}" target="_blank" style="color:#25d366;"><i class="fab fa-whatsapp"></i> ${d.wa}</a>` : '-'}</td>
+      <td>${d.keterangan||'-'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editDriver('${d.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="delDriver('${d.id}')" style="margin-left:4px;"><i class="fas fa-trash"></i></button></td>
+    </tr>`).join('');
+}
+
+function renderExpoTbl() {
+  const tbody = document.getElementById("expoTbl");
+  if (!expoList.length) { tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--txt2);">Belum ada ekspedisi</td></tr>`; return; }
+  tbody.innerHTML = expoList.map((e,i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td><strong>${e.nama}</strong></td>
+      <td>${e.pic||'-'}</td>
+      <td>${e.wa ? `<a href="https://wa.me/${formatWa(e.wa)}" target="_blank" style="color:#25d366;"><i class="fab fa-whatsapp"></i> ${e.wa}</a>` : '-'}</td>
+      <td>${e.keterangan||'-'}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editExpo('${e.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="delExpo('${e.id}')" style="margin-left:4px;"><i class="fas fa-trash"></i></button></td>
+    </tr>`).join('');
+}
+
+function formatWa(num) {
+  const n = (num||'').replace(/[^0-9]/g,'');
+  return n.startsWith('0') ? '62'+n.slice(1) : n;
+}
+
+// ==============================
+// JADWAL RENDER
+// ==============================
+function updateAdminStats() {
+  const d = jadwalData;
+  const ready = d.filter(x=>x.statusPengiriman==='ready').length;
+  const pending = d.filter(x=>x.statusPengiriman==='pending').length;
+  const cancel = d.filter(x=>x.statusPengiriman==='cancel').length;
+  const ton = d.reduce((s,x)=>s+(parseFloat(x.tonase)||0),0).toFixed(1);
+  document.getElementById("adminStats").innerHTML = `
+    <div class="mini-stat"><div class="lbl">Total Jadwal</div><div class="val">${d.length}</div></div>
+    <div class="mini-stat"><div class="lbl">Siap</div><div class="val" style="color:var(--success);">${ready}</div></div>
+    <div class="mini-stat"><div class="lbl">Pending</div><div class="val" style="color:var(--warning);">${pending}</div></div>
+    <div class="mini-stat"><div class="lbl">Cancel</div><div class="val" style="color:var(--danger);">${cancel}</div></div>
+    <div class="mini-stat"><div class="lbl">Total Tonase</div><div class="val">${ton} ton</div></div>
+  `;
+}
+
+window.renderJadwal = function() {
+  const search = (document.getElementById("adminSearch")?.value||'').toLowerCase();
+  const filterStatus = document.getElementById("adminFilterStatus")?.value||'';
+  let data = jadwalData.filter(d => {
+    if (filterStatus && d.statusPengiriman !== filterStatus) return false;
+    if (search) {
+      return (d.area||'').toLowerCase().includes(search) ||
+             (d.namaDriver||d.expedisi||'').toLowerCase().includes(search) ||
+             (d.noKendaraan||'').toLowerCase().includes(search);
+    }
+    return true;
+  });
+
+  const tbody = document.getElementById("adminTblBody");
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--txt2);">Tidak ada jadwal</td></tr>`;
+    return;
+  }
+
+  const statusBadge = {
+    ready: '<span class="badge b-ready">Siap</span>',
+    pending: '<span class="badge b-pending">Belum Siap</span>',
+    cancel: '<span class="badge b-cancel">Cancel</span>',
+    reschedule: '<span class="badge b-reschedule">Reschedule</span>',
+  };
+  const priBadge = {
+    High: '<span class="badge b-high">High</span>',
+    Mid: '<span class="badge b-mid">Mid</span>',
+    Low: '<span class="badge b-low">Low</span>',
+  };
+
+  tbody.innerHTML = data.map((d, i) => {
+    const mu = d.statusBarang?.mu, sk = d.statusBarang?.skincare;
+    const spPrint = d.spPrint, spPeriksa = d.spPeriksa;
+    const kesiapan = `
+      <div style="font-size:.7rem;line-height:1.6;">
+        <label style="cursor:pointer;"><input type="checkbox" ${mu?'checked':''} onchange="updateBarang('${d.id}','mu',this.checked)"> MU</label><br>
+        <label style="cursor:pointer;"><input type="checkbox" ${sk?'checked':''} onchange="updateBarang('${d.id}','skincare',this.checked)"> Skincare</label>
+      </div>`;
+    const spHtml = `
+      <div style="font-size:.7rem;line-height:1.6;">
+        <label style="cursor:pointer;"><input type="checkbox" ${spPrint?'checked':''} onchange="updateSP('${d.id}','spPrint',this.checked)"> Print</label><br>
+        <label style="cursor:pointer;"><input type="checkbox" ${spPeriksa?'checked':''} onchange="updateSP('${d.id}','spPeriksa',this.checked)"> Diperiksa</label>
+      </div>`;
+    const armada = d.isInternal
+      ? `<span class="badge b-internal"><i class="fas fa-user"></i> ${d.namaDriver||'-'}</span>`
+      : `<span style="font-size:.75rem;">${d.expedisi||'-'}<br><span style="color:var(--txt2);">${d.namaPic||''}</span></span>`;
+    return `
+      <tr>
+        <td>${i+1}</td>
+        <td style="font-weight:700;">${d.jamBerangkat||'-'}</td>
+        <td>${d.area||'-'}</td>
+        <td>${d.jenisMobil||'-'}</td>
+        <td>${d.noKendaraan||'<span style="color:var(--txt2);font-style:italic;font-size:.7rem;">TBC</span>'}</td>
+        <td>${d.tonase||'-'} t<br><span style="color:var(--txt2);font-size:.7rem;">${d.kubikasi||'-'} m³</span></td>
+        <td>${armada}</td>
+        <td>${spHtml}</td>
+        <td>${kesiapan}</td>
+        <td>${statusBadge[d.statusPengiriman]||'-'}${d.statusPengiriman==='reschedule'&&d.keteranganReschedule?`<br><span style="font-size:.65rem;color:var(--reschedule);">${d.keteranganReschedule}</span>`:''}</td>
+        <td>${priBadge[d.prioritas]||'-'}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="editJadwal('${d.id}')"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-danger btn-sm" onclick="delJadwal('${d.id}')" style="margin-left:4px;"><i class="fas fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }).join('');
+};
+
+// ==============================
+// MODAL JADWAL
+// ==============================
+window.openModal = function(data) {
+  document.getElementById("editId").value = data?.id || '';
+  document.getElementById("modalJadwalTitle").textContent = data ? 'Edit Jadwal' : 'Tambah Jadwal Pengiriman';
+  document.getElementById("fDate").value = data?.date || selectedDate;
+  document.getElementById("fJam").value = data?.jamBerangkat || '';
+  document.getElementById("fArea").value = data?.area || '';
+  document.getElementById("fJenisMobil").value = data?.jenisMobil || '';
+  document.getElementById("fNoKendaraan").value = data?.noKendaraan || '';
+  document.getElementById("fTonase").value = data?.tonase || '';
+  document.getElementById("fKubikasi").value = data?.kubikasi || '';
+  document.getElementById("fPrioritas").value = data?.prioritas || 'Mid';
+  document.getElementById("fStatus").value = data?.statusPengiriman || 'pending';
+  document.getElementById("fRescheduleNote").value = data?.keteranganReschedule || '';
+  document.getElementById("fSpPrint").checked = data?.spPrint || false;
+  document.getElementById("fSpPeriksa").checked = data?.spPeriksa || false;
+  document.getElementById("fMakeup").checked = data?.statusBarang?.mu || false;
+  document.getElementById("fSkincare").checked = data?.statusBarang?.skincare || false;
+  if (data?.isInternal) {
+    document.getElementById("fTipeArmada").value = "internal";
+    document.getElementById("fDriver").value = data.driverId || '';
+  } else {
+    document.getElementById("fTipeArmada").value = "expedisi";
+    document.getElementById("fExpedisi").value = data?.expedisiId || '';
+  }
+  toggleArmadaFields();
+  toggleReschedule();
+  document.getElementById("modalJadwal").classList.add("open");
+};
+window.closeModal = () => document.getElementById("modalJadwal").classList.remove("open");
+
+window.editJadwal = function(id) {
+  const d = jadwalData.find(x=>x.id===id);
+  if(d) openModal(d);
+};
+
+window.delJadwal = async function(id) {
+  if (!confirm("Hapus jadwal ini?")) return;
+  await deleteDoc(doc(db,"deliveries",id));
+  addLog(`Hapus jadwal #${id}`);
+};
+
+window.toggleArmadaFields = function() {
+  const v = document.getElementById("fTipeArmada").value;
+  document.getElementById("fieldDriver").style.display = v==="internal" ? "flex" : "none";
+  document.getElementById("fieldExpedisi").style.display = v==="expedisi" ? "flex" : "none";
+};
+
+document.getElementById("fStatus").addEventListener("change", toggleReschedule);
+function toggleReschedule() {
+  const v = document.getElementById("fStatus").value;
+  document.getElementById("fieldReschedule").style.display = v==="reschedule" ? "flex" : "none";
+}
+
+window.saveJadwal = async function() {
+  const editId = document.getElementById("editId").value;
+  const tipe = document.getElementById("fTipeArmada").value;
+  const isInternal = tipe === "internal";
+  let namaDriver='', expedisi='', expedisiId='', driverId='', namaPic='', picWa='';
+  if (isInternal) {
+    const sel = document.getElementById("fDriver");
+    driverId = sel.value;
+    namaDriver = sel.options[sel.selectedIndex]?.dataset.nama || '';
+    picWa = sel.options[sel.selectedIndex]?.dataset.wa || '';
+  } else {
+    const sel = document.getElementById("fExpedisi");
+    expedisiId = sel.value;
+    expedisi = sel.options[sel.selectedIndex]?.dataset.nama || '';
+    namaPic = sel.options[sel.selectedIndex]?.dataset.pic || '';
+    picWa = sel.options[sel.selectedIndex]?.dataset.wa || '';
+  }
+  const payload = {
+    date: document.getElementById("fDate").value,
+    jamBerangkat: document.getElementById("fJam").value,
+    area: document.getElementById("fArea").value.trim(),
+    jenisMobil: document.getElementById("fJenisMobil").value,
+    noKendaraan: document.getElementById("fNoKendaraan").value.trim(),
+    tonase: parseFloat(document.getElementById("fTonase").value)||0,
+    kubikasi: parseFloat(document.getElementById("fKubikasi").value)||0,
+    prioritas: document.getElementById("fPrioritas").value,
+    statusPengiriman: document.getElementById("fStatus").value,
+    keteranganReschedule: document.getElementById("fRescheduleNote").value,
+    isInternal, namaDriver, expedisi, expedisiId, driverId, namaPic, picWa,
+    spPrint: document.getElementById("fSpPrint").checked,
+    spPeriksa: document.getElementById("fSpPeriksa").checked,
+    statusBarang: {
+      mu: document.getElementById("fMakeup").checked,
+      skincare: document.getElementById("fSkincare").checked,
+    },
+    updatedAt: serverTimestamp(),
+    updatedBy: currentUser?.email || '',
+  };
+  if (!payload.area || !payload.jenisMobil) { alert("Area dan Jenis Mobil wajib diisi!"); return; }
+  if (editId) {
+    await updateDoc(doc(db,"deliveries",editId), payload);
+    addLog(`Edit jadwal: ${payload.area} (${payload.date})`);
+  } else {
+    payload.createdAt = serverTimestamp();
+    payload.createdBy = currentUser?.email || '';
+    await addDoc(collection(db,"deliveries"), payload);
+    addLog(`Tambah jadwal: ${payload.area} (${payload.date})`);
+  }
+  closeModal();
+};
+
+// Quick checklist updates
+window.updateBarang = async function(id, field, val) {
+  const upd = { [`statusBarang.${field}`]: val, updatedAt: serverTimestamp(), updatedBy: currentUser?.email||'' };
+  await updateDoc(doc(db,"deliveries",id), upd);
+  addLog(`Update kesiapan ${field} → ${val ? 'Siap' : 'Belum'} (ID:${id})`);
+};
+window.updateSP = async function(id, field, val) {
+  await updateDoc(doc(db,"deliveries",id), { [field]: val, updatedAt: serverTimestamp(), updatedBy: currentUser?.email||'' });
+  addLog(`Update ${field} → ${val} (ID:${id})`);
+};
+
+// ==============================
+// DRIVER CRUD
+// ==============================
+window.openDriverModal = () => {
+  document.getElementById("driverEditId").value='';
+  document.getElementById("driverModalTitle").textContent='Tambah Driver Internal';
+  document.getElementById("dNama").value='';document.getElementById("dWa").value='';document.getElementById("dKet").value='';
+  document.getElementById("modalDriver").classList.add("open");
+};
+window.closeDriverModal = () => document.getElementById("modalDriver").classList.remove("open");
+window.editDriver = function(id) {
+  const d = driverList.find(x=>x.id===id);
+  document.getElementById("driverEditId").value=id;
+  document.getElementById("driverModalTitle").textContent='Edit Driver';
+  document.getElementById("dNama").value=d.nama||'';document.getElementById("dWa").value=d.wa||'';document.getElementById("dKet").value=d.keterangan||'';
+  document.getElementById("modalDriver").classList.add("open");
+};
+window.saveDriver = async function() {
+  const id = document.getElementById("driverEditId").value;
+  const payload = { nama:document.getElementById("dNama").value.trim(), wa:document.getElementById("dWa").value.trim(), keterangan:document.getElementById("dKet").value.trim() };
+  if (!payload.nama) { alert("Nama wajib diisi"); return; }
+  if (id) await updateDoc(doc(db,"drivers",id), payload);
+  else await addDoc(collection(db,"drivers"), payload);
+  closeDriverModal(); loadMasterData(); addLog(`Simpan driver: ${payload.nama}`);
+};
+window.delDriver = async function(id) {
+  if (!confirm("Hapus driver ini?")) return;
+  await deleteDoc(doc(db,"drivers",id)); loadMasterData();
+};
+
+// ==============================
+// EXPEDISI CRUD
+// ==============================
+window.openExpoModal = () => {
+  document.getElementById("expoEditId").value='';
+  document.getElementById("expoModalTitle").textContent='Tambah Ekspedisi';
+  ['eNama','ePic','eWa','eKet'].forEach(id => document.getElementById(id).value='');
+  document.getElementById("modalExpo").classList.add("open");
+};
+window.closeExpoModal = () => document.getElementById("modalExpo").classList.remove("open");
+window.editExpo = function(id) {
+  const e = expoList.find(x=>x.id===id);
+  document.getElementById("expoEditId").value=id;
+  document.getElementById("expoModalTitle").textContent='Edit Ekspedisi';
+  document.getElementById("eNama").value=e.nama||'';document.getElementById("ePic").value=e.pic||'';
+  document.getElementById("eWa").value=e.wa||'';document.getElementById("eKet").value=e.keterangan||'';
+  document.getElementById("modalExpo").classList.add("open");
+};
+window.saveExpo = async function() {
+  const id = document.getElementById("expoEditId").value;
+  const payload = { nama:document.getElementById("eNama").value.trim(), pic:document.getElementById("ePic").value.trim(), wa:document.getElementById("eWa").value.trim(), keterangan:document.getElementById("eKet").value.trim() };
+  if (!payload.nama) { alert("Nama ekspedisi wajib diisi"); return; }
+  if (id) await updateDoc(doc(db,"expedisi",id), payload);
+  else await addDoc(collection(db,"expedisi"), payload);
+  closeExpoModal(); loadMasterData(); addLog(`Simpan ekspedisi: ${payload.nama}`);
+};
+window.delExpo = async function(id) {
+  if (!confirm("Hapus ekspedisi ini?")) return;
+  await deleteDoc(doc(db,"expedisi",id)); loadMasterData();
+};
+
+// ==============================
+// LOG
+// ==============================
+let logData = [];
+async function loadLog() {
+  const snap = await getDocs(query(collection(db,"activityLog"), orderBy("timestamp","desc")));
+  logData = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderLog();
+}
+function renderLog() {
+  const el = document.getElementById("logList");
+  if (!logData.length) { el.innerHTML='<p style="color:var(--txt2);font-size:.78rem;">Belum ada log</p>'; return; }
+  el.innerHTML = logData.slice(0,50).map(l => {
+    const ts = l.timestamp?.toDate?.()?.toLocaleString('id-ID') || '-';
+    return `<div class="log-item"><span class="log-time">${ts}</span><span class="log-who">${l.user}</span><span style="color:var(--txt3);margin-left:6px;">${l.action}</span></div>`;
+  }).join('');
+}
+async function addLog(action) {
+  await addDoc(collection(db,"activityLog"), { action, user: currentUser?.email||'unknown', timestamp: serverTimestamp() });
+}
+window.addLog = addLog;
+
+// ==============================
+// EXPORT EXCEL
+// ==============================
+window.exportExcel = async function() {
+  const from = document.getElementById("exportFrom").value;
+  const to = document.getElementById("exportTo").value;
+  const status = document.getElementById("exportStatus").value;
+  const msg = document.getElementById("exportMsg");
+  if (!from || !to) { alert("Pilih rentang tanggal"); return; }
+  msg.textContent = "Mengambil data...";
+  const q = query(collection(db,"deliveries"), where("date",">=",from), where("date","<=",to), orderBy("date","asc"), orderBy("createdAt","asc"));
+  const snap = await getDocs(q);
+  let rows = snap.docs.map(d=>({id:d.id,...d.data()}));
+  if (status) rows = rows.filter(r=>r.statusPengiriman===status);
+  if (!rows.length) { msg.textContent = "Tidak ada data pada rentang tersebut."; return; }
+  const ws_data = [
+    ["#","Tanggal","Jam","Area Tujuan","Jenis Mobil","No Kendaraan","Tonase (ton)","Kubikasi (m³)","Tipe Armada","Driver/Ekspedisi","PIC","WA PIC","Status","Prioritas","MU Siap","Skincare Siap","SP Print","SP Diperiksa","Keterangan Reschedule","Dibuat Oleh","Dibuat"],
+    ...rows.map((r,i) => [
+      i+1, r.date, r.jamBerangkat||'', r.area||'', r.jenisMobil||'', r.noKendaraan||'TBC',
+      r.tonase||0, r.kubikasi||0,
+      r.isInternal?'Internal':'Ekspedisi',
+      r.isInternal?(r.namaDriver||''):(r.expedisi||''),
+      r.namaPic||'', r.picWa||'',
+      r.statusPengiriman||'', r.prioritas||'',
+      r.statusBarang?.mu?'Ya':'Tidak', r.statusBarang?.skincare?'Ya':'Tidak',
+      r.spPrint?'Ya':'Tidak', r.spPeriksa?'Ya':'Tidak',
+      r.keteranganReschedule||'', r.createdBy||'',
+      r.createdAt?.toDate?.()?.toLocaleDateString('id-ID')||''
+    ])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
+  ws['!cols'] = [{wch:4},{wch:12},{wch:7},{wch:18},{wch:12},{wch:14},{wch:10},{wch:10},{wch:10},{wch:18},{wch:14},{wch:14},{wch:12},{wch:8},{wch:8},{wch:10},{wch:8},{wch:10},{wch:20},{wch:16},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, ws, "Jadwal Pengiriman");
+  XLSX.writeFile(wb, `delivery_schedule_${from}_${to}.xlsx`);
+  msg.textContent = `✅ Export ${rows.length} data berhasil!`;
+};
+
+// ==============================
+// NAV
+// ==============================
+const pageTitles = {
+  jadwal:{t:"Jadwal Pengiriman",s:"Kelola jadwal pengiriman harian"},
+  log:{t:"Log Aktivitas",s:"Riwayat perubahan oleh admin"},
+  driver:{t:"Driver Internal",s:"Master data driver internal"},
+  expedisi:{t:"Ekspedisi",s:"Master data ekspedisi / mitra logistik"},
+  export:{t:"Export Excel",s:"Download data jadwal pengiriman"},
+};
+window.switchNav = function(el, tab) {
+  document.querySelectorAll(".nav-item").forEach(x=>x.classList.remove("active"));
+  el.classList.add("active");
+  document.querySelectorAll(".tab-pane").forEach(x=>x.classList.remove("active"));
+  document.getElementById("pane-"+tab).classList.add("active");
+  const p = pageTitles[tab]||{t:tab,s:''};
+  document.getElementById("pageTitle").textContent = p.t;
+  document.getElementById("pageSub").textContent = p.s;
+  if (tab==='log') loadLog();
+};
+</script>
+</body>
+</html>

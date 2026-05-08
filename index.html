@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dashboard Loading Dock | Delivery Schedule</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --bg: #060810;
+  --surface: #0c0f1a;
+  --surface2: #111525;
+  --border: #1e2438;
+  --border2: #252c42;
+  --txt: #e8eeff;
+  --txt2: #7b8ab8;
+  --accent: #3d5afe;
+  --accent2: #00e5ff;
+  --glow: rgba(61,90,254,0.25);
+  --success: #00e676;
+  --warning: #ffab00;
+  --danger: #ff1744;
+  --danger2: rgba(255,23,68,0.12);
+  --purple: #d500f9;
+  --high: #ff6d00;
+  --mid: #ffd600;
+  --low: #546e7a;
+  --internal: #7c4dff;
+  --reschedule: #ff6f00;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--bg);
+  font-family: 'DM Sans', sans-serif;
+  height: 100vh; overflow: hidden;
+  color: var(--txt);
+}
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(61,90,254,0.08) 0%, transparent 60%),
+              radial-gradient(ellipse 60% 40% at 80% 110%, rgba(0,229,255,0.05) 0%, transparent 60%);
+  pointer-events:none; z-index:0;
+}
+
+/* LAYOUT */
+.dash { height:100vh; display:flex; flex-direction:column; padding:16px 28px 12px; position:relative; z-index:1; }
+
+/* HEADER */
+.header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; gap:12px; flex-shrink:0; }
+.title-block h1 {
+  font-family:'Syne', sans-serif;
+  font-size:1.45rem; font-weight:800;
+  letter-spacing:-0.5px;
+  background: linear-gradient(135deg, #e8eeff 0%, var(--accent2) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  display:flex; align-items:center; gap:10px;
+}
+.title-block h1 i { color:var(--accent2); background:none; font-size:1.2rem; }
+.date-nav { display:flex; align-items:center; gap:8px; margin-top:6px; }
+.badge-date {
+  background: var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:5px 14px; font-size:0.78rem; font-weight:500;
+  color:var(--txt2); display:inline-flex; align-items:center; gap:6px;
+}
+.date-btn {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:5px 10px; cursor:pointer;
+  color:var(--txt2); transition:.2s; font-size:0.75rem;
+}
+.date-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.date-btn.today-btn { color:var(--accent2); }
+input.date-pick {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:4px 10px; color:var(--txt);
+  font-family:'DM Sans',sans-serif; font-size:0.78rem; cursor:pointer;
+}
+input.date-pick::-webkit-calendar-picker-indicator { filter:invert(0.7); }
+
+.stats-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.stat {
+  background:var(--surface2); border:1px solid var(--border);
+  border-radius:12px; padding:6px 14px;
+  display:flex; align-items:center; gap:10px;
+}
+.stat-ico { font-size:1.2rem; color:var(--accent); }
+.stat-lbl { font-size:0.62rem; text-transform:uppercase; letter-spacing:1px; color:var(--txt2); font-weight:600; }
+.stat-val { font-family:'Syne',sans-serif; font-size:1.2rem; font-weight:700; line-height:1.1; }
+
+/* FILTER BAR */
+.filter-bar {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:10px; margin-bottom:10px; flex-shrink:0; flex-wrap:wrap;
+}
+.chips { display:flex; gap:6px; flex-wrap:wrap; }
+.chip {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:6px; padding:5px 14px; font-size:0.75rem; font-weight:600;
+  cursor:pointer; transition:.2s; color:var(--txt2); display:flex; align-items:center; gap:5px;
+}
+.chip.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 0 12px var(--glow); }
+.chip:hover:not(.active) { border-color:var(--accent); color:var(--txt); }
+.bar-right { display:flex; gap:8px; align-items:center; }
+.search-wrap {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:5px 12px;
+  display:flex; align-items:center; gap:7px;
+}
+.search-wrap input {
+  background:transparent; border:none; outline:none;
+  color:var(--txt); font-family:'DM Sans',sans-serif; font-size:0.8rem; width:160px;
+}
+.search-wrap input::placeholder { color:var(--txt2); }
+.mode-btn {
+  background:var(--surface2); border:1px solid var(--border2);
+  border-radius:8px; padding:5px 12px; cursor:pointer;
+  color:var(--txt2); font-size:0.75rem; font-weight:600; transition:.2s;
+}
+.mode-btn:hover { color:var(--txt); border-color:var(--border2); }
+.admin-link {
+  background:var(--accent); border:none; border-radius:8px;
+  padding:5px 14px; color:#fff; font-size:0.75rem; font-weight:700;
+  cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px;
+  transition:.2s;
+}
+.admin-link:hover { opacity:.85; }
+
+/* TABLE AREA */
+.slide-box {
+  flex:1; min-height:0;
+  display:flex; flex-direction:column;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+  box-shadow:0 8px 40px rgba(0,0,0,0.5);
+}
+.tbl-wrap { flex:1; overflow:auto; scrollbar-width:thin; scrollbar-color:var(--border2) transparent; }
+table {
+  width:100%; border-collapse:collapse;
+  min-width:1100px; font-size:0.85rem;
+}
+thead th {
+  background:var(--surface2); color:var(--txt2);
+  font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:1px;
+  padding:10px 14px; text-align:left;
+  border-bottom:1px solid var(--border); position:sticky; top:0; z-index:5;
+}
+tbody tr { transition:background .15s; border-bottom:1px solid var(--border); }
+tbody tr:hover { background:rgba(255,255,255,0.025); }
+tbody td { padding:10px 14px; vertical-align:middle; }
+
+/* STATUS STRIPE */
+.row-ready td:first-child { border-left:3px solid var(--success); }
+.row-pending td:first-child { border-left:3px solid var(--warning); }
+.row-cancel { opacity:.7; }
+.row-cancel td:first-child { border-left:3px solid var(--danger); background:var(--danger2); }
+.row-reschedule td:first-child { border-left:3px solid var(--reschedule); }
+
+/* GROUP HEADER */
+.group-header td {
+  background:rgba(61,90,254,0.08);
+  color:var(--txt2); font-size:0.65rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:2px;
+  padding:5px 14px; border-bottom:1px solid var(--border);
+}
+
+/* BADGES */
+.badge-priority {
+  display:inline-flex; align-items:center; gap:4px;
+  padding:2px 10px; border-radius:5px; font-size:0.72rem; font-weight:700;
+}
+.p-high { background:rgba(255,109,0,.18); color:#ff9a3c; border:1px solid rgba(255,109,0,.3); }
+.p-mid  { background:rgba(255,214,0,.15); color:#ffd600; border:1px solid rgba(255,214,0,.25); }
+.p-low  { background:rgba(84,110,122,.2); color:#90a4ae; border:1px solid rgba(84,110,122,.3); }
+
+.badge-status {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:5px; font-size:0.73rem; font-weight:600;
+  background:var(--surface2); border:1px solid var(--border2);
+}
+.dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+.dot-ready { background:var(--success); box-shadow:0 0 6px var(--success); }
+.dot-pending { background:var(--warning); }
+.dot-cancel { background:var(--danger); }
+.dot-reschedule { background:var(--reschedule); }
+
+.internal-tag {
+  display:inline-flex; align-items:center; gap:5px;
+  color:#b39ddb; font-weight:600;
+}
+.internal-badge {
+  font-size:0.58rem; background:rgba(124,77,255,.2);
+  color:#ce93d8; border:1px solid rgba(124,77,255,.3);
+  padding:1px 6px; border-radius:4px; font-weight:700;
+}
+.expo-tag {
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--surface2); border:1px solid var(--border2);
+  padding:2px 10px; border-radius:5px; font-size:0.78rem;
+}
+.wa-link {
+  display:inline-flex; align-items:center; gap:4px;
+  color:#25d366; font-size:0.7rem; margin-left:6px;
+  text-decoration:none; opacity:.8; transition:.2s;
+}
+.wa-link:hover { opacity:1; }
+.tbc { color:var(--txt2); font-style:italic; font-size:0.75rem; }
+
+/* JAM */
+.jam-cell { font-family:'Syne',sans-serif; font-weight:700; font-size:0.9rem; }
+.jam-cell.late { color:var(--danger); }
+
+/* SLIDE NAV */
+.slide-nav {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 16px; background:var(--surface2); border-top:1px solid var(--border);
+  flex-shrink:0;
+}
+.nav-btns { display:flex; gap:8px; }
+.nav-btn {
+  background:var(--surface); border:1px solid var(--border2);
+  border-radius:8px; padding:6px 16px; cursor:pointer;
+  font-weight:600; font-size:0.78rem; transition:.2s; color:var(--txt2);
+}
+.nav-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+.page-ind { font-size:0.78rem; color:var(--txt2); background:var(--surface); padding:5px 14px; border-radius:8px; border:1px solid var(--border); }
+.auto-wrap { display:flex; align-items:center; gap:8px; font-size:0.75rem; color:var(--txt2); }
+.toggle { width:40px; height:22px; background:var(--border2); border-radius:20px; cursor:pointer; position:relative; transition:.25s; }
+.toggle.on { background:var(--accent); }
+.toggle::after { content:''; width:18px; height:18px; background:#fff; border-radius:50%; position:absolute; top:2px; left:2px; transition:.25s; }
+.toggle.on::after { left:20px; }
+
+/* PROGRESS BAR */
+.progress-bar { height:3px; background:var(--border); position:relative; overflow:hidden; flex-shrink:0; }
+.progress-fill { height:100%; background:linear-gradient(90deg, var(--accent), var(--accent2)); width:0%; transition:none; }
+
+/* FOOTER */
+.footer { text-align:center; padding:4px 0; font-size:0.72rem; color:var(--txt2); flex-shrink:0; }
+
+/* LIGHT MODE */
+body.light {
+  --bg:#f0f4f8; --surface:#fff; --surface2:#f5f7fc;
+  --border:#dde3f0; --border2:#c9d3e8;
+  --txt:#0f172a; --txt2:#64748b;
+  --glow:rgba(61,90,254,0.15);
+}
+body.light::before { opacity:.3; }
+
+/* EMPTY STATE */
+.empty-state { text-align:center; padding:60px 20px; color:var(--txt2); }
+.empty-state i { font-size:2.5rem; margin-bottom:12px; display:block; opacity:.4; }
+
+/* ALERT PULSE */
+@keyframes pulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,230,118,0.4)} 50%{box-shadow:0 0 0 8px rgba(0,230,118,0)} }
+.pulse-ready { animation:pulse 2s infinite; }
+</style>
+</head>
+<body>
+<div class="dash">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="title-block">
+      <h1><i class="fas fa-warehouse"></i> DELIVERY SCHEDULE — LOADING DOCK</h1>
+      <div class="date-nav">
+        <button class="date-btn" onclick="shiftDate(-1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="badge-date"><i class="far fa-calendar-alt"></i> <span id="currentDate"></span></div>
+        <button class="date-btn" onclick="shiftDate(1)"><i class="fas fa-chevron-right"></i></button>
+        <button class="date-btn today-btn" onclick="goToday()"><i class="fas fa-calendar-day"></i> Hari Ini</button>
+        <input type="date" class="date-pick" id="datePick" onchange="pickDate(this.value)">
+      </div>
+    </div>
+    <div id="statsRow" class="stats-row"></div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <div class="filter-bar">
+    <div class="chips">
+      <div class="chip active" data-f="all"><i class="fas fa-list"></i> Semua</div>
+      <div class="chip" data-f="ready"><i class="fas fa-check-circle"></i> Siap</div>
+      <div class="chip" data-f="pending"><i class="fas fa-clock"></i> Belum Siap</div>
+      <div class="chip" data-f="cancel"><i class="fas fa-ban"></i> Cancel</div>
+      <div class="chip" data-f="reschedule"><i class="fas fa-redo"></i> Reschedule</div>
+    </div>
+    <div class="bar-right">
+      <div class="search-wrap">
+        <i class="fas fa-search" style="color:var(--txt2);font-size:.75rem;"></i>
+        <input type="text" id="searchInput" placeholder="Cari area / armada / ekspedisi…">
+      </div>
+      <button class="mode-btn" id="modeBtn"><i class="fas fa-sun"></i></button>
+      <a href="receiver.html" class="admin-link" target="_blank"><i class="fas fa-map-marker-alt"></i> Penerima</a>
+      <a href="admin.html" class="admin-link" style="background:var(--surface2);color:var(--txt);border:1px solid var(--border2);" target="_blank"><i class="fas fa-lock"></i> Admin</a>
+    </div>
+  </div>
+
+  <!-- SLIDE AREA -->
+  <div class="slide-box">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="tbl-wrap" id="tblWrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th><i class="fas fa-clock" style="margin-right:4px;"></i>Jam</th>
+            <th>Area Tujuan</th>
+            <th>Jenis Mobil</th>
+            <th>No Kendaraan</th>
+            <th>Tonase</th>
+            <th>Kubikasi</th>
+            <th>Ekspedisi / Driver</th>
+            <th>Kesiapan Barang</th>
+            <th>Status</th>
+            <th>Prioritas</th>
+          </tr>
+        </thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+    <div class="slide-nav">
+      <div class="nav-btns">
+        <button class="nav-btn" id="prevBtn"><i class="fas fa-chevron-left"></i> Prev</button>
+        <button class="nav-btn" id="nextBtn">Next <i class="fas fa-chevron-right"></i></button>
+      </div>
+      <div class="page-ind" id="pageInd">Halaman 1 / 1</div>
+      <div class="auto-wrap">
+        <span><i class="fas fa-play-circle"></i> Auto Slide</span>
+        <div class="toggle on" id="autoToggle"></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer" id="footerInfo">🟢 Siap &nbsp;|&nbsp; 🟡 Belum Siap &nbsp;|&nbsp; 🔴 Cancel &nbsp;|&nbsp; 🔶 Reschedule &nbsp;|&nbsp; <span style="color:var(--accent2);">Real-time Firebase</span> &nbsp;|&nbsp; <span id="lastUpdate"></span></div>
+</div>
+
+<!-- FIREBASE SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ==============================
+// FIREBASE CONFIG — GANTI DENGAN KONFIGURASI FIREBASE ANDA
+// ==============================
+const firebaseConfig = {
+  apiKey: "AIzaSyA3jCsOuH3lT8NsVtCs3cQV0azc5Gur10E",
+  authDomain: "schedule-c452a.firebaseapp.com",
+  projectId: "schedule-c452a",
+  storageBucket: "schedule-c452a.firebasestorage.app",
+  messagingSenderId: "555260750564",
+  appId: "1:555260750564:web:25d5def705830d464a1af1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ==============================
+// STATE
+// ==============================
+let allData = [];
+let currentPage = 0;
+let ROWS = 8;
+let autoActive = true;
+let autoTimer = null;
+let progressTimer = null;
+let progressStart = null;
+let currentFilter = "all";
+let currentSearch = "";
+let selectedDate = todayStr();
+let isDark = true;
+const INTERVAL = 10000; // 10 detik
+
+function todayStr() {
+  return new Date().toISOString().slice(0,10);
+}
+
+// ==============================
+// DATE CONTROLS
+// ==============================
+function renderDate() {
+  const d = new Date(selectedDate + 'T00:00:00');
+  document.getElementById("currentDate").textContent = d.toLocaleDateString('id-ID', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById("datePick").value = selectedDate;
+}
+
+window.shiftDate = function(dir) {
+  const d = new Date(selectedDate + 'T00:00:00');
+  d.setDate(d.getDate() + dir);
+  selectedDate = d.toISOString().slice(0,10);
+  renderDate(); subscribeData();
+}
+window.goToday = function() { selectedDate = todayStr(); renderDate(); subscribeData(); }
+window.pickDate = function(v) { selectedDate = v; renderDate(); subscribeData(); }
+renderDate();
+
+// ==============================
+// FIREBASE SUBSCRIPTION
+// ==============================
+let unsub = null;
+function subscribeData() {
+  if (unsub) unsub();
+  const q = query(
+    collection(db, "deliveries"),
+    where("date", "==", selectedDate),
+    orderBy("createdAt", "asc")
+  );
+  unsub = onSnapshot(q, snap => {
+    allData = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById("lastUpdate").textContent = "Update: " + new Date().toLocaleTimeString('id-ID');
+    currentPage = 0;
+    renderAll();
+    // Browser notification for new ready items
+    allData.filter(d => d.statusBarang?.mu && d.statusBarang?.skincare).forEach(d => {
+      if (!d._notified) {
+        d._notified = true;
+        showAlert(`📦 ${d.area} — Barang SIAP!`);
+      }
+    });
+  });
+}
+
+// ==============================
+// SORT LOGIC: Internal first → group by expedition → input order
+// ==============================
+function sortedGrouped(data) {
+  const internal = data.filter(d => d.isInternal);
+  const expos = data.filter(d => !d.isInternal);
+  // group by expedition name
+  const groups = {};
+  expos.forEach(d => {
+    const key = (d.expedisi || 'Lainnya').toLowerCase();
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(d);
+  });
+  const sortedGroups = Object.keys(groups).sort();
+  let result = [];
+  if (internal.length) result.push({ type:'header', label:'🚗 Armada Internal' }, ...internal);
+  sortedGroups.forEach(k => {
+    result.push({ type:'header', label:`🚚 ${groups[k][0].expedisi || 'Ekspedisi'}` });
+    result.push(...groups[k]);
+  });
+  return result;
+}
+
+function getFiltered() {
+  let d = allData.filter(item => {
+    if (currentFilter !== 'all' && item.statusPengiriman !== currentFilter) return false;
+    if (currentSearch.trim()) {
+      const s = currentSearch.toLowerCase();
+      return (item.area||'').toLowerCase().includes(s) ||
+             (item.noKendaraan||'').toLowerCase().includes(s) ||
+             (item.expedisi||'').toLowerCase().includes(s) ||
+             (item.namaDriver||'').toLowerCase().includes(s);
+    }
+    return true;
+  });
+  return sortedGrouped(d);
+}
+
+// ==============================
+// RENDER
+// ==============================
+function renderAll() {
+  updateStats();
+  renderSlide();
+}
+
+function updateStats() {
+  const real = allData;
+  const ton = real.reduce((s,d) => s + (parseFloat(d.tonase)||0), 0).toFixed(1);
+  const kub = real.reduce((s,d) => s + (parseFloat(d.kubikasi)||0), 0).toFixed(1);
+  const ready = real.filter(d => d.statusPengiriman === 'ready').length;
+  const pending = real.filter(d => d.statusPengiriman === 'pending').length;
+  const cancel = real.filter(d => d.statusPengiriman === 'cancel').length;
+  document.getElementById("statsRow").innerHTML = `
+    <div class="stat"><div class="stat-ico"><i class="fas fa-clipboard-list"></i></div><div><div class="stat-lbl">Total</div><div class="stat-val">${real.length}</div></div></div>
+    <div class="stat"><div class="stat-ico"><i class="fas fa-weight-hanging"></i></div><div><div class="stat-lbl">Tonase / Kubik</div><div class="stat-val">${ton}t / ${kub}m³</div></div></div>
+    <div class="stat"><div class="stat-ico"><i class="fas fa-chart-pie"></i></div><div><div class="stat-lbl">Status</div><div class="stat-val" style="font-size:.85rem;">🟢${ready} 🟡${pending} 🔴${cancel}</div></div></div>
+  `;
+}
+
+function renderSlide() {
+  const rows = getFiltered();
+  const dataRows = rows.filter(r => r.type !== 'header');
+  // Count pages by data rows only
+  const totalDataRows = dataRows.length;
+  const totalPages = Math.max(1, Math.ceil(totalDataRows / ROWS));
+  if (currentPage >= totalPages) currentPage = 0;
+
+  // Paginate: build page chunks respecting headers
+  // Rebuild flat list with headers, then paginate data only
+  const body = document.getElementById("tblBody");
+  body.innerHTML = "";
+
+  if (totalDataRows === 0) {
+    body.innerHTML = `<tr><td colspan="11" class="empty-state"><i class="fas fa-inbox"></i><br>Tidak ada jadwal untuk tanggal ini</td></tr>`;
+    document.getElementById("pageInd").textContent = "Halaman 1 / 1 (0 jadwal)";
+    return;
+  }
+
+  // Slice data rows for current page
+  const start = currentPage * ROWS;
+  const pageDataRows = dataRows.slice(start, start + ROWS);
+  const pageDataIds = new Set(pageDataRows.map(r => r.id));
+
+  // Render with group headers
+  let no = start + 1;
+  let lastGroup = null;
+  rows.forEach(r => {
+    if (r.type === 'header') { lastGroup = r; return; }
+    if (!pageDataIds.has(r.id)) return;
+    // Insert group header if new group
+    if (lastGroup && lastGroup._rendered !== r.id + '_grp') {
+      // check if any of this group's rows is on this page
+      const grpRows = rows.filter(x => x.type !== 'header' && pageDataIds.has(x.id));
+      if (grpRows.length) {
+        const htr = document.createElement("tr");
+        htr.className = "group-header";
+        htr.innerHTML = `<td colspan="11">${lastGroup.label}</td>`;
+        body.appendChild(htr);
+        lastGroup._rendered = r.id + '_grp';
+      }
+    }
+    body.appendChild(buildRow(r, no++));
+  });
+
+  document.getElementById("pageInd").textContent = `Halaman ${currentPage+1} / ${totalPages}  (${totalDataRows} jadwal)`;
+  document.getElementById("tblWrap").scrollTop = 0;
+}
+
+function buildRow(d, no) {
+  const tr = document.createElement("tr");
+  const statusCls = { ready:'row-ready', pending:'row-pending', cancel:'row-cancel', reschedule:'row-reschedule' };
+  tr.className = statusCls[d.statusPengiriman] || 'row-pending';
+
+  const statusDot = { ready:'dot-ready', pending:'dot-pending', cancel:'dot-cancel', reschedule:'dot-reschedule' };
+  const statusLabel = { ready:'Siap', pending:'Belum Siap', cancel:'Cancel', reschedule:'Reschedule' };
+  const priorityHtml = d.prioritas === 'High'
+    ? `<span class="badge-priority p-high"><i class="fas fa-arrow-up"></i> High</span>`
+    : d.prioritas === 'Mid'
+    ? `<span class="badge-priority p-mid"><i class="fas fa-minus"></i> Mid</span>`
+    : `<span class="badge-priority p-low"><i class="fas fa-arrow-down"></i> Low</span>`;
+
+  let expoHtml = '';
+  const waNum = (d.picWa||'').replace(/[^0-9]/g,'');
+  const waLink = waNum ? `<a href="https://wa.me/${waNum.startsWith('0') ? '62'+waNum.slice(1) : waNum}" target="_blank" class="wa-link"><i class="fab fa-whatsapp"></i></a>` : '';
+  if (d.isInternal) {
+    expoHtml = `<span class="internal-tag"><i class="fas fa-user-circle"></i> ${d.namaDriver||'-'} <span class="internal-badge">INTERNAL</span></span>${waLink}`;
+  } else {
+    expoHtml = `<span class="expo-tag"><i class="fas fa-truck"></i> ${d.expedisi||'-'}</span> <span style="font-size:.72rem;color:var(--txt2);">${d.namaPic||''}</span>${waLink}`;
+  }
+
+  const muOk = d.statusBarang?.mu;
+  const skOk = d.statusBarang?.skincare;
+  const kesiapanHtml = `
+    <span style="font-size:.72rem;color:${muOk?'var(--success)':'var(--txt2)'}; margin-right:4px;">${muOk?'✅':'⬜'} MU</span>
+    <span style="font-size:.72rem;color:${skOk?'var(--success)':'var(--txt2)'};">${skOk?'✅':'⬜'} SK</span>
+  `;
+
+  const now = new Date();
+  const jamVal = d.jamBerangkat || '-';
+  let jamCls = 'jam-cell';
+  if (d.jamBerangkat) {
+    const [hh,mm] = d.jamBerangkat.split(':').map(Number);
+    const jamDate = new Date(); jamDate.setHours(hh,mm,0);
+    if (jamDate < now && d.statusPengiriman !== 'ready') jamCls += ' late';
+  }
+
+  tr.innerHTML = `
+    <td style="font-weight:700;font-family:'Syne',sans-serif;font-size:.85rem;">${no}</td>
+    <td class="${jamCls}">${jamVal}</td>
+    <td><i class="fas fa-location-dot" style="margin-right:6px;color:var(--accent2);font-size:.75rem;"></i>${d.area||'-'}</td>
+    <td><i class="fas fa-truck-moving" style="margin-right:5px;color:var(--txt2);font-size:.75rem;"></i>${d.jenisMobil||'-'}</td>
+    <td>${d.noKendaraan ? `<strong>${d.noKendaraan}</strong>` : `<span class="tbc">TBC</span>`}</td>
+    <td>${d.tonase||'-'} ton</td>
+    <td>${d.kubikasi||'-'} m³</td>
+    <td>${expoHtml}</td>
+    <td>${kesiapanHtml}</td>
+    <td><span class="badge-status"><span class="dot ${statusDot[d.statusPengiriman]||'dot-pending'}"></span>${statusLabel[d.statusPengiriman]||'Belum Siap'}</span>${d.statusPengiriman==='reschedule'&&d.keteranganReschedule?`<br><span style="font-size:.65rem;color:var(--reschedule);">${d.keteranganReschedule}</span>`:''}</td>
+    <td>${priorityHtml}</td>
+  `;
+  return tr;
+}
+
+// ==============================
+// AUTO SLIDE + PROGRESS BAR
+// ==============================
+function startAuto() {
+  stopAuto();
+  progressStart = Date.now();
+  animProgress();
+  autoTimer = setInterval(() => {
+    const filtered = getFiltered().filter(r => r.type !== 'header');
+    const tp = Math.max(1, Math.ceil(filtered.length / ROWS));
+    currentPage = (currentPage + 1) % tp;
+    renderSlide();
+    progressStart = Date.now();
+  }, INTERVAL);
+}
+function stopAuto() {
+  clearInterval(autoTimer); cancelAnimationFrame(progressTimer);
+  document.getElementById("progressFill").style.width = "0%";
+}
+function animProgress() {
+  const fill = document.getElementById("progressFill");
+  function step() {
+    if (!autoActive) return;
+    const pct = Math.min(100, ((Date.now() - progressStart) / INTERVAL) * 100);
+    fill.style.width = pct + "%";
+    progressTimer = requestAnimationFrame(step);
+  }
+  step();
+}
+function setAuto(on) {
+  autoActive = on;
+  const el = document.getElementById("autoToggle");
+  el.classList.toggle("on", on);
+  on ? startAuto() : stopAuto();
+}
+
+// ==============================
+// EVENTS
+// ==============================
+document.getElementById("prevBtn").onclick = () => {
+  if(autoActive) setAuto(false);
+  const filtered = getFiltered().filter(r=>r.type!=='header');
+  const tp = Math.max(1, Math.ceil(filtered.length/ROWS));
+  currentPage = (currentPage - 1 + tp) % tp;
+  renderSlide();
+};
+document.getElementById("nextBtn").onclick = () => {
+  if(autoActive) setAuto(false);
+  const filtered = getFiltered().filter(r=>r.type!=='header');
+  const tp = Math.max(1, Math.ceil(filtered.length/ROWS));
+  currentPage = (currentPage + 1) % tp;
+  renderSlide();
+};
+document.getElementById("autoToggle").onclick = () => setAuto(!autoActive);
+
+document.querySelectorAll(".chip").forEach(c => {
+  c.addEventListener("click", () => {
+    document.querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
+    c.classList.add("active");
+    currentFilter = c.dataset.f;
+    currentPage = 0;
+    renderSlide();
+    if(autoActive) startAuto();
+  });
+});
+
+document.getElementById("searchInput").addEventListener("input", e => {
+  currentSearch = e.target.value;
+  currentPage = 0;
+  renderSlide();
+});
+
+document.getElementById("modeBtn").addEventListener("click", () => {
+  isDark = !isDark;
+  document.body.classList.toggle("light", !isDark);
+  document.getElementById("modeBtn").innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+});
+
+// Alert helper
+function showAlert(msg) {
+  if (Notification.permission === "granted") {
+    new Notification(msg, { icon: "https://cdn-icons-png.flaticon.com/512/2920/2920071.png" });
+  }
+}
+if (Notification.permission === "default") Notification.requestPermission();
+
+// ==============================
+// INIT
+// ==============================
+subscribeData();
+setAuto(true);
+</script>
+</body>
+</html>
